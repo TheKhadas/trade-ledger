@@ -10,8 +10,17 @@ const dateFmt = new Intl.DateTimeFormat('en-US', {
   hour12: false,
 })
 
+const timeFmt = new Intl.DateTimeFormat('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })
+
+// Show just the time when a trade closes on the day it opened.
+function formatClose(open, close) {
+  if (!close) return '—'
+  return open.toDateString() === close.toDateString() ? timeFmt.format(close) : dateFmt.format(close)
+}
+
 const COLUMNS = [
-  { key: 'date', label: 'Date', align: 'left' },
+  { key: 'date', label: 'Opened', align: 'left' },
+  { key: 'exitDate', label: 'Closed', align: 'left' },
   { key: 'symbol', label: 'Symbol', align: 'left' },
   { key: 'side', label: 'Side', align: 'left' },
   { key: 'entry', label: 'Entry', align: 'right' },
@@ -25,7 +34,7 @@ export default function TradesTable({ trades }) {
   return (
     <div className="overflow-hidden rounded-xl border border-zinc-800">
       <div className="max-h-[32rem] overflow-auto">
-        <table className="w-full min-w-[40rem] text-sm">
+        <table className="w-full min-w-[46rem] text-sm">
           <thead className="sticky top-0 bg-zinc-900 text-xs uppercase tracking-wide text-zinc-400">
             <tr>
               <th scope="col" className="px-3 py-2.5 text-right font-medium">#</th>
@@ -41,6 +50,7 @@ export default function TradesTable({ trades }) {
               <tr key={t.id} className="hover:bg-zinc-900/60">
                 <td className="px-3 py-2 text-right tabular-nums text-zinc-500">{i + 1}</td>
                 <td className="whitespace-nowrap px-3 py-2 tabular-nums text-zinc-300">{dateFmt.format(t.date)}</td>
+                <td className="whitespace-nowrap px-3 py-2 tabular-nums text-zinc-400">{formatClose(t.date, t.exitDate)}</td>
                 <td className="px-3 py-2 font-medium text-zinc-100">{t.symbol}</td>
                 <td className="px-3 py-2">
                   <span

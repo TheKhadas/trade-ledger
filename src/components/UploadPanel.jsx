@@ -98,17 +98,18 @@ export default function UploadPanel({ onFile, onLoadSample, loading }) {
         <summary className="cursor-pointer text-zinc-300">Expected CSV format</summary>
         <p className="mt-3">
           Columns: {REQUIRED_COLUMNS.map((c) => <code key={c} className="mr-1 rounded bg-zinc-800 px-1.5 py-0.5 text-zinc-200">{c}</code>)}
-          and optional {OPTIONAL_COLUMNS.map((c) => <code key={c} className="rounded bg-zinc-800 px-1.5 py-0.5 text-zinc-200">{c}</code>)}.
+          and optional {OPTIONAL_COLUMNS.map((c) => <code key={c} className="mr-1 rounded bg-zinc-800 px-1.5 py-0.5 text-zinc-200">{c}</code>)}.
         </p>
         <pre className="mt-3 overflow-x-auto rounded-lg bg-zinc-950 p-3 text-xs text-zinc-300">
-{`date,symbol,side,entry,exit,stop,size,fees
-2026-07-06T09:38:00,SPY,long,628.26,642.93,619,10,1.00
-2026-07-08T12:47:00,MSFT,short,506.66,494.70,511.41,20,1.00`}
+{`date,exit_date,symbol,side,entry,exit,stop,size,fees
+2026-07-06T09:38:00,2026-07-06T09:54:00,SPY,long,628.26,642.93,619,10,1.00
+2026-07-08T12:47:00,,MSFT,short,506.66,494.70,511.41,20,`}
         </pre>
         <p className="mt-3">
           <code className="text-zinc-200">side</code> is <code className="text-zinc-200">long</code> or{' '}
-          <code className="text-zinc-200">short</code>. The stop must be below entry for longs and above entry for shorts.
-          Invalid rows are skipped and listed.
+          <code className="text-zinc-200">short</code>. <code className="text-zinc-200">date</code> is when the trade
+          opened; <code className="text-zinc-200">exit_date</code> is when it closed (if omitted, the open time is used).
+          The stop must be below entry for longs and above entry for shorts. Invalid rows are skipped and listed.
         </p>
       </details>
     </section>

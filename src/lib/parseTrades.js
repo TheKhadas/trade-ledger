@@ -1,12 +1,18 @@
 import Papa from 'papaparse'
 
 export const REQUIRED_COLUMNS = ['date', 'symbol', 'side', 'entry', 'exit', 'stop', 'size']
-export const OPTIONAL_COLUMNS = ['fees']
+export const OPTIONAL_COLUMNS = ['exit_date', 'fees']
 export const MAX_FILE_BYTES = 5 * 1024 * 1024
 
 // YYYY-MM-DD, optionally followed by a time and a timezone offset.
 const ISO_DATETIME =
   /^\d{4}-\d{2}-\d{2}(?:[T ]\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?(?:Z|[+-]\d{2}:?\d{2})?)?$/
+
+function parseDate(raw) {
+  if (!ISO_DATETIME.test(raw)) return null
+  const date = new Date(raw.replace(' ', 'T'))
+  return Number.isNaN(date.getTime()) ? null : date
+}
 
 function parseNumber(raw) {
   if (raw === undefined || raw === null) return NaN
@@ -24,10 +30,18 @@ export function validateRow(row) {
   const get = (key) => (row[key] ?? '').toString().trim()
 
   const dateRaw = get('date')
-  const date = new Date(dateRaw.replace(' ', 'T'))
+  const date = parseDate(dateRaw)
   if (!dateRaw) errors.push('date is missing')
-  else if (!ISO_DATETIME.test(dateRaw) || Number.isNaN(date.getTime()))
-    errors.push(`date "${dateRaw}" is not an ISO datetime (e.g. 2026-07-06T09:38:00)`)
+  else if (!date) errors.push(`date "${dateRaw}" is not an ISO datetime (e.g. 2026-07-06T09:38:00)`)
+
+  // Optional close time; when absent, downstream code falls back to the entry date.
+  const exitDateRaw = get('exit_date')
+  let exitDate = null
+  if (exitDateRaw) {
+    exitDate = parseDate(exitDateRaw)
+    if (!exitDate) errors.push(`exit_date "${exitDateRaw}" is not an ISO datetime (e.g. 2026-07-06T10:05:00)`)
+    else if (date && exitDate < date) errors.push(`exit_date ${exitDateRaw} is before date ${dateRaw}`)
+  }
 
   const symbol = get('symbol').toUpperCase()
   if (!symbol) errors.push('symbol is missing')
@@ -65,6 +79,7 @@ export function validateRow(row) {
   return {
     trade: {
       date,
+      exitDate,
       symbol,
       side,
       entry: nums.entry,

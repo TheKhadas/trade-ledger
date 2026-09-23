@@ -19,7 +19,8 @@ a recruiter who has no data of their own.
   and has basic abuse protection (reject oversized bodies; simple per-IP rate limit).
 
 ## CSV format
-Columns: `date` (ISO datetime), `symbol`, `side` (long/short), `entry`, `exit`, `stop`, `size`, `fees` (optional).
+Columns: `date` (ISO datetime the trade opened), `exit_date` (optional ISO datetime it closed; falls back to `date`),
+`symbol`, `side` (long/short), `entry`, `exit`, `stop`, `size`, `fees` (optional).
 Validate rows, show clear errors for bad rows, skip them instead of crashing.
 
 ## Features
@@ -29,7 +30,7 @@ Validate rows, show clear errors for bad rows, skip them instead of crashing.
 3. **R-multiples** — R = (exit − entry) / (entry − stop), sign-adjusted for shorts. Show avg R and an R distribution chart.
 4. **Behavioral metrics** — P&L by weekday and hour, performance after a win vs after a loss,
    longest win/loss streaks, position size changes after losses.
-5. **Revenge-trade detection** — flag a trade opened within 30 min of a losing trade's close
+5. **Revenge-trade detection** — flag a trade opened within 30 min of a losing trade's close (its `exit_date`, else `date`)
    AND with size ≥ 1.5× the previous trade. List flagged trades and their combined P&L.
 6. **Equity curve** chart.
 7. **AI verdict** — button calls `/api/verdict`; Claude returns a short, blunt assessment:
