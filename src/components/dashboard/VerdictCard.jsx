@@ -1,7 +1,59 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { buildVerdictPayload } from '../../lib/verdictPayload'
 
 const TIMEOUT_MS = 70_000
+const TYPICAL_SECONDS = 15
+
+// What the visitor sees while waiting, by elapsed seconds. Time-based, since the API gives no progress.
+const STAGES = [
+  [0, 'Sending your summary stats to Claude…'],
+  [3, 'Claude is reviewing your metrics…'],
+  [10, 'Writing your strengths, leaks and rule…'],
+  [20, 'Taking a little longer than usual. Hang tight…'],
+]
+
+function useElapsedSeconds(active) {
+  const [elapsed, setElapsed] = useState(0)
+  useEffect(() => {
+    if (!active) return
+    const start = Date.now()
+    const id = setInterval(() => setElapsed((Date.now() - start) / 1000), 250)
+    return () => {
+      clearInterval(id)
+      setElapsed(0)
+    }
+  }, [active])
+  return elapsed
+}
+
+function VerdictProgress({ elapsed }) {
+  const stage = STAGES.findLast(([at]) => elapsed >= at)[1]
+  // Eases toward 95% over the typical duration and never claims to be done.
+  const pct = 95 * (1 - Math.exp((-2.2 * elapsed) / TYPICAL_SECONDS))
+  return (
+    <div className="mt-5 rounded-lg border border-zinc-800 bg-zinc-950/40 px-4 py-3">
+      <div className="flex items-baseline justify-between gap-3">
+        <p className="text-sm font-medium text-zinc-100">Analyzing your trades… usually ~{TYPICAL_SECONDS}s</p>
+        <p className="text-xs tabular-nums text-zinc-500" aria-hidden="true">
+          {Math.floor(elapsed)}s
+        </p>
+      </div>
+      <div
+        className="mt-2.5 h-1.5 overflow-hidden rounded-full bg-zinc-800"
+        role="progressbar"
+        aria-label="Estimated progress"
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuenow={Math.round(pct)}
+      >
+        <div className="h-full rounded-full bg-emerald-500 transition-[width] duration-300 ease-out" style={{ width: `${pct}%` }} />
+      </div>
+      <p role="status" className="mt-2 text-xs text-zinc-400">
+        {stage}
+      </p>
+    </div>
+  )
+}
 
 async function requestVerdict(payload, signal) {
   let res
@@ -67,9 +119,10 @@ export default function VerdictCard({ analysis, trades }) {
 
   const { status, verdict, error } = state
   const loading = status === 'loading'
+  const elapsed = useElapsedSeconds(loading)
 
   return (
-    <section aria-live="polite" className="rounded-xl border border-zinc-800 bg-zinc-900 p-4 sm:p-5">
+    <section aria-busy={loading} className="rounded-xl border border-zinc-800 bg-zinc-900 p-4 sm:p-5">
       <header className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h3 className="text-sm font-semibold text-zinc-100">AI verdict</h3>
@@ -100,14 +153,10 @@ export default function VerdictCard({ analysis, trades }) {
         </p>
       )}
 
-      {loading && !verdict && (
-        <div className="mt-5 space-y-3" aria-label="Loading verdict">
-          {[80, 95, 70, 88].map((w, i) => (
-            <div key={i} className="h-3 animate-pulse rounded bg-zinc-800" style={{ width: `${w}%` }} />
-          ))}
-          <p className="text-xs text-zinc-500">Usually takes 10–30 seconds.</p>
-        </div>
-      )}
+      {loading && <VerdictProgress elapsed={elapsed} />}
+      <p role="status" className="sr-only">
+        {status === 'done' ? 'Verdict ready.' : ''}
+      </p>
 
       {verdict && (
         <div className={`mt-5 space-y-6 transition-opacity ${loading ? 'opacity-50' : ''}`}>
