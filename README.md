@@ -64,7 +64,7 @@ date,exit_date,symbol,side,entry,exit,stop,size,fees
 
 - The Anthropic API key is only ever read from the `ANTHROPIC_API_KEY` environment variable, on the server. It is
   never in frontend code or git.
-- Claude receives only a ~3 KB summary of computed metrics, never raw trades or CSV text. The server rebuilds that
+- Claude receives only a ~2 KB summary of computed metrics, never raw trades or CSV text. The server rebuilds that
   summary from a fixed list of allowed fields and checks every type and range. The only text that can reach the
   prompt is weekday names, ISO dates and ticker-shaped symbols, which closes off prompt injection through uploaded data.
 - Abuse protection: bodies over 16 KB are rejected while being read, requests are rate-limited per IP (5 per 10 min)
@@ -76,6 +76,16 @@ date,exit_date,symbol,side,entry,exit,stop,size,fees
 This project was built with [Claude Code](https://claude.com/claude-code), Anthropic's agentic coding tool, working
 from the spec in [`CLAUDE.md`](CLAUDE.md). The commit history shows the build step by step: scaffold, parser, sample
 data, metrics engine and tests, dashboard, then the AI verdict.
+
+## Documentation
+
+| Doc | What's in it |
+| --- | --- |
+| [Architecture](docs/architecture.md) | Data flow diagram, module map, and the reasoning behind key design decisions |
+| [Metrics reference](docs/metrics.md) | Exact definition, formula and edge cases for every number on the dashboard |
+| [CSV format](docs/csv-format.md) | Full input spec and every validation rule and error message |
+| [`/api/verdict` reference](docs/api.md) | Request and response schemas, status codes, limits, model settings, security model |
+| [Development](docs/development.md) | Setup, scripts, testing, local API route, sample data, deployment |
 
 ## Local setup
 
