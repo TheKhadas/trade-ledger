@@ -1,37 +1,58 @@
-import { useState } from 'react'
+import { lazy, Suspense, useEffect, useMemo, useState } from 'react'
 import RowErrors from './components/RowErrors'
-import TradesTable from './components/TradesTable'
 import UploadPanel from './components/UploadPanel'
+import { analyze } from './lib/metrics'
 import { parseTradesCsv } from './lib/parseTrades'
 
+// Charts are the bulk of the bundle; load them only once there are trades to show.
+const loadDashboard = () => import('./components/dashboard/Dashboard')
+const Dashboard = lazy(loadDashboard)
+
 const EMPTY = { trades: [], rowErrors: [], fatalError: null, source: null }
+const SAMPLE = 'sample-trades.csv'
+
+// ?demo in the URL opens straight into the sample dashboard (handy for sharing).
+const IS_DEMO = new URLSearchParams(window.location.search).has('demo')
+
+async function fetchSample() {
+  const res = await fetch(`/${SAMPLE}`)
+  if (!res.ok) throw new Error(`HTTP ${res.status}`)
+  return res.text()
+}
+
+/** Reads and parses a CSV into app state; never throws. */
+async function readTrades(source, getText) {
+  loadDashboard() // start fetching chart code in parallel with parsing
+  try {
+    return { ...parseTradesCsv(await getText()), source }
+  } catch (err) {
+    return { ...EMPTY, source, fatalError: `Couldn't read ${source}: ${err.message}` }
+  }
+}
 
 export default function App() {
   const [data, setData] = useState(EMPTY)
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(IS_DEMO)
 
-  async function load(source, getText) {
+  function show(result) {
+    setData(result)
+    setLoading(false)
+  }
+
+  function load(source, getText) {
     setLoading(true)
-    try {
-      const text = await getText()
-      setData({ ...parseTradesCsv(text), source })
-    } catch (err) {
-      setData({ ...EMPTY, source, fatalError: `Couldn't read ${source}: ${err.message}` })
-    } finally {
-      setLoading(false)
-    }
+    readTrades(source, getText).then(show)
   }
 
   const handleFile = (file) => load(file.name, () => file.text())
+  const handleSample = () => load(SAMPLE, fetchSample)
 
-  const handleSample = () =>
-    load('sample-trades.csv', async () => {
-      const res = await fetch('/sample-trades.csv')
-      if (!res.ok) throw new Error(`HTTP ${res.status}`)
-      return res.text()
-    })
+  useEffect(() => {
+    if (IS_DEMO) readTrades(SAMPLE, fetchSample).then(show)
+  }, [])
 
   const hasTrades = data.trades.length > 0
+  const analysis = useMemo(() => (hasTrades ? analyze(data.trades) : null), [data.trades, hasTrades])
 
   return (
     <div className="min-h-screen">
@@ -74,15 +95,11 @@ export default function App() {
             )}
           </>
         ) : (
-          <div className="space-y-4">
-            <div className="flex flex-wrap items-baseline justify-between gap-2">
-              <h2 className="text-xl font-semibold">
-                {data.trades.length} trade{data.trades.length === 1 ? '' : 's'}
-              </h2>
-              <p className="text-sm text-zinc-400">from {data.source}</p>
-            </div>
+          <div className="space-y-6">
             <RowErrors rowErrors={data.rowErrors} />
-            <TradesTable trades={data.trades} />
+            <Suspense fallback={<p className="py-16 text-center text-sm text-zinc-400">Loading dashboard…</p>}>
+              <Dashboard trades={data.trades} analysis={analysis} source={data.source} />
+            </Suspense>
           </div>
         )}
       </main>
