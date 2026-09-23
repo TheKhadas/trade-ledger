@@ -35,7 +35,7 @@ function PointList({ title, points, tone }) {
               {i + 1}
             </span>
             <p className="text-sm">
-              <span className="font-medium text-zinc-100">{p.title}.</span>{' '}
+              <span className="font-medium text-zinc-100">{p.title.replace(/[.!?:]+$/, '')}.</span>{' '}
               <span className="text-zinc-400">{p.detail}</span>
             </p>
           </li>
