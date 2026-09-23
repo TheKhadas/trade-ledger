@@ -6,6 +6,7 @@ import TradesTable from '../TradesTable'
 import BehaviorCard from './BehaviorCard'
 import RevengeCard from './RevengeCard'
 import StatTile from './StatTile'
+import VerdictCard from './VerdictCard'
 
 function rBinLabel(bin) {
   if (bin.open === 'below') return `<${num(bin.to, 1)}`
@@ -79,6 +80,8 @@ export default function Dashboard({ trades, analysis, source }) {
         <StatTile label="Max drawdown" value={money(-core.maxDrawdown)} valueClass={core.maxDrawdown ? 'text-rose-400' : 'text-zinc-50'} hint="Peak to trough" />
         <StatTile label="Avg R" value={rFmt(r.avgR)} valueClass={signClass(r.avgR)} hint={`Total ${rFmt(r.totalR, 1)}`} />
       </section>
+
+      <VerdictCard analysis={analysis} trades={trades} />
 
       <ChartCard
         title="Equity curve"
