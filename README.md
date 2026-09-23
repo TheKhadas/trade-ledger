@@ -3,9 +3,10 @@
 A trading journal that finds the leaks in your trading. Upload a CSV of trades to get core performance metrics,
 R-multiples, behavioral patterns, revenge-trade detection, and a blunt AI verdict from Claude.
 
-**Live demo:** _coming soon_ · no data needed: open `/?demo` to load 60 sample trades.
+**Live demo:** [trade-ledger-xi.vercel.app](https://trade-ledger-xi.vercel.app) · no data of your own?
+[Open it with 60 sample trades loaded →](https://trade-ledger-xi.vercel.app/?demo)
 
-![Trade Ledger dashboard showing net P&L, stat tiles, equity curve, R-multiple distribution and flagged revenge trades](docs/dashboard.png)
+![Trade Ledger dashboard showing net P&L, stat tiles, a real AI verdict from Claude, the equity curve, R-multiple distribution and flagged revenge trades](docs/dashboard.png)
 
 ## Features
 
